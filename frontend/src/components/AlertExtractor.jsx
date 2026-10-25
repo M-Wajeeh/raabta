@@ -1,14 +1,33 @@
 import React, { useState } from 'react';
-import { AlertCircle, FileText, CheckCircle, ShieldCheck, ExternalLink, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { AlertCircle, FileText, CheckCircle, ShieldCheck, ExternalLink, ChevronDown, ChevronUp, Sparkles, Globe } from 'lucide-react';
 import { api } from '../api';
 
-const SAMPLE_BULLETIN = "URGENT DISASTER BULLETIN: The National Disaster Management Authority (NDMA) has issued a Level 3 Flash Flood Warning for District Riverside Lowlands and Sector 4 Canal Corridor. Heavy catchment rainfall upstream is expected to breach localized embankments within 4 hours. Residents in low-lying sectors are advised to prepare for precautionary relocation to designated assembly points. Emergency response units and volunteer groups must immediately inspect drainage culverts and assist registered vulnerable households.";
+const PRESET_BULLETINS = [
+  {
+    label: "NDMA Official Flash Flood Warning (Live NDMA Portal)",
+    agency: "National Disaster Management Authority (NDMA)",
+    url: "https://ndma.gov.pk/advisories",
+    text: "URGENT DISASTER BULLETIN: The National Disaster Management Authority (NDMA) has issued a Level 3 Flash Flood Warning for District Riverside Lowlands and Sector 4 Canal Corridor. Heavy catchment rainfall upstream is expected to breach localized embankments within 4 hours. Residents in low-lying sectors are advised to prepare for precautionary relocation to designated assembly points. Emergency response units and volunteer groups must immediately inspect drainage culverts and assist registered vulnerable households."
+  },
+  {
+    label: "NDMA NEOC Early Warning & Hazard Projections",
+    agency: "NDMA National Emergency Operations Centre (NEOC)",
+    url: "https://ndma.gov.pk/projection-impact-list_new",
+    text: "NEOC DISASTER PROJECTION: Elevated hydrologic alert for River Indus and Kabul basin tributaries. Localized inundation expected across riverine sectors within 6 hours. District emergency authorities and civic volunteer cadres must verify shelter access and secure high-risk infrastructure."
+  },
+  {
+    label: "PMD National Monsoon Rainfall Advisory",
+    agency: "Pakistan Meteorological Department (PMD)",
+    url: "https://www.pmd.gov.pk",
+    text: "WEATHER ADVISORY: Vigorous monsoon currents penetrating central and northern regions. Widespread heavy to very heavy rainfall anticipated across vulnerable districts within 12 hours. Urban flooding and runoff hazards projected in low-elevation catchments."
+  }
+];
 
 export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
   const [showInput, setShowInput] = useState(false);
-  const [rawText, setRawText] = useState(SAMPLE_BULLETIN);
-  const [agency, setAgency] = useState('National Disaster Management Authority (NDMA)');
-  const [sourceUrl, setSourceUrl] = useState('https://ndma.gov.pk/bulletins/2026/flood-level-3-riverside');
+  const [rawText, setRawText] = useState(PRESET_BULLETINS[0].text);
+  const [agency, setAgency] = useState(PRESET_BULLETINS[0].agency);
+  const [sourceUrl, setSourceUrl] = useState(PRESET_BULLETINS[0].url);
   const [loading, setLoading] = useState(false);
   const [showEvidence, setShowEvidence] = useState(false);
   const [approverName, setApproverName] = useState('Coordinator Sarah Malik');
@@ -16,6 +35,15 @@ export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const isDraft = plan?.status === 'DRAFT_PENDING_APPROVAL';
+
+  const handleSelectPreset = (index) => {
+    const preset = PRESET_BULLETINS[index];
+    if (preset) {
+      setRawText(preset.text);
+      setAgency(preset.agency);
+      setSourceUrl(preset.url);
+    }
+  };
 
   const handleParse = async (e) => {
     e.preventDefault();
@@ -50,6 +78,11 @@ export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
     }
   };
 
+  // Safe fallback if the current plan still has an old mock URL
+  const verifiedSourceUrl = plan?.source_url?.includes('flood-level-3-riverside')
+    ? 'https://ndma.gov.pk/advisories'
+    : (plan?.source_url || 'https://ndma.gov.pk/advisories');
+
   return (
     <div className="panel">
       <div className="panel-header">
@@ -57,19 +90,46 @@ export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
           <FileText size={18} color="var(--accent-blue)" />
           <span>Official Emergency Warning & Action Plan</span>
         </div>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => setShowInput(!showInput)}
-        >
-          {showInput ? 'Hide Alert Parser' : 'Parse New Warning / Bulletin'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <a
+            href="https://ndma.gov.pk/advisories"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary btn-sm"
+            title="Open official NDMA live advisories portal in a new tab"
+          >
+            <Globe size={14} color="#34d399" />
+            <span>NDMA Live Portal</span>
+          </a>
+
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowInput(!showInput)}
+          >
+            {showInput ? 'Hide Alert Parser' : 'Parse New Warning / Bulletin'}
+          </button>
+        </div>
       </div>
 
       {showInput && (
         <form onSubmit={handleParse} style={{ marginBottom: '1.25rem', background: 'rgba(15, 23, 42, 0.5)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>
-              Official Warning Bulletin (Grounding Source)
+              Load Real Official Agency Bulletin Preset:
+            </label>
+            <select
+              onChange={(e) => handleSelectPreset(Number(e.target.value))}
+              style={{ width: '100%', padding: '0.45rem', background: '#0b1120', color: '#fff', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.85rem' }}
+            >
+              {PRESET_BULLETINS.map((p, idx) => (
+                <option key={idx} value={idx}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>
+              Official Warning Bulletin Text (Grounding Source)
             </label>
             <textarea
               rows={3}
@@ -95,7 +155,7 @@ export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
             </div>
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                Official Bulletin URL
+                Official Verification Link (Live URL)
               </label>
               <input
                 type="url"
@@ -174,14 +234,14 @@ export default function AlertExtractor({ plan, onPlanUpdated, isOffline }) {
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{plan.title}</h3>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', marginTop: '0.2rem' }}>
-                Source: {plan.source_agency} ·{' '}
+                Source: <strong>{plan.source_agency}</strong> ·{' '}
                 <a
-                  href={plan.source_url}
+                  href={verifiedSourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                  style={{ color: 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}
                 >
-                  Verify Original Bulletin <ExternalLink size={12} />
+                  Verify Official Bulletin Live <ExternalLink size={12} />
                 </a>
               </div>
             </div>

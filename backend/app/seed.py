@@ -16,7 +16,7 @@ SAMPLE_FLOOD_ALERT = (
 )
 
 SAMPLE_AGENCY = "National Disaster Management Authority (NDMA)"
-SAMPLE_URL = "https://ndma.gov.pk/bulletins/2026/flood-level-3-riverside"
+SAMPLE_URL = "https://ndma.gov.pk/advisories"
 
 
 def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:

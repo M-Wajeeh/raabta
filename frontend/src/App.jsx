@@ -118,7 +118,7 @@ export default function App() {
       />
 
       {isOffline && (
-        <div style={{ background: '#78350f', borderBottom: '1px solid #b45309', padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem', color: '#fef3c7' }}>
+        <div className="no-print" style={{ background: '#78350f', borderBottom: '1px solid #b45309', padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem', color: '#fef3c7' }}>
           <WifiOff size={16} />
           <span>
             <strong>Offline Field Mode Active:</strong> Operating from local cached action plan and offline storage. Changes persist locally.

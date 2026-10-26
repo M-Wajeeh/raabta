@@ -1,6 +1,5 @@
 import React from 'react';
-import { ShieldAlert, Wifi, WifiOff, RotateCcw, Printer, Download } from 'lucide-react';
-import { api } from '../api';
+import { ShieldAlert, Wifi, WifiOff, RotateCcw, Printer, Download, Sparkles } from 'lucide-react';
 
 export default function Header({ isOffline, onToggleOffline, onResetScenario, onExport }) {
   return (
@@ -13,10 +12,10 @@ export default function Header({ isOffline, onToggleOffline, onResetScenario, on
           <div>
             <div className="brand-title">
               Raabta
-              <span className="brand-badge">Civic Resilience</span>
+              <span className="brand-badge">Clarity Edition</span>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Community Emergency Action Network · Last-Mile Preparedness Loop
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              Civic Resilience & Autonomous Emergency Preparedness Loop
             </div>
           </div>
         </div>
@@ -28,7 +27,7 @@ export default function Header({ isOffline, onToggleOffline, onResetScenario, on
             title="Toggle between Live EOC server mode and Weak Connectivity Offline Cache"
           >
             {isOffline ? <WifiOff size={14} /> : <Wifi size={14} />}
-            <span>{isOffline ? 'Offline Field Cache' : 'Live Operations'}</span>
+            <span>{isOffline ? 'Offline Field Cache' : 'Live EOC Operations'}</span>
           </button>
 
           <button

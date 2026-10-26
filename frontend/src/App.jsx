@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
 import MetricsBar from './components/MetricsBar';
 import AlertExtractor from './components/AlertExtractor';
 import TaskBoard from './components/TaskBoard';
-import MapView from './components/MapView';
 import IncidentFeed from './components/IncidentFeed';
 import PrintableCards from './components/PrintableCards';
+import ReliefView from './components/ReliefView';
 import { api } from './api';
-import { WifiOff, AlertTriangle } from 'lucide-react';
+import { WifiOff, Wifi, Printer, Download } from 'lucide-react';
+import './relief.css';
 
 export default function App() {
   const [plan, setPlan] = useState(null);
@@ -17,6 +17,7 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [isOffline, setIsOffline] = useState(api.isOfflineMode());
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('map');
 
   const loadData = async () => {
     try {
@@ -63,9 +64,10 @@ export default function App() {
   };
 
   const handleResetScenario = async () => {
-    if (confirm('Reset scenario to seeded Riverside District Flash Flood baseline?')) {
+    if (confirm('Reset the demo to the seeded Multan and Muzaffargarh flood scenario?')) {
       await api.resetScenario(true);
-      await loadData();
+      localStorage.removeItem('raabta_supply_runs');
+      window.location.reload();
     }
   };
 
@@ -108,52 +110,77 @@ export default function App() {
     if (newMetrics) setMetrics(newMetrics);
   };
 
+  const isPlanDraft = plan?.status === 'DRAFT_PENDING_APPROVAL';
+
   return (
-    <div className="app-container">
-      <Header
-        isOffline={isOffline}
-        onToggleOffline={handleToggleOffline}
-        onResetScenario={handleResetScenario}
-        onExport={handleExport}
-      />
+    <div className={view === 'map' ? 'rl-shell' : 'app-container'}>
+      <header className="rl-topbar no-print">
+        <div className="rl-brand">
+          <span className="rl-brand-name">Raabta</span>
+          <span lang="ur" dir="rtl" className="rl-brand-ur">رابطہ</span>
+        </div>
+        <div className="rl-event">
+          <strong>Pakistan floods 2025</strong>
+          <span>GDACS orange flood alert since 14 Aug 2025</span>
+        </div>
+        <nav className="rl-tabs" aria-label="Views">
+          <button aria-pressed={view === 'map'} onClick={() => setView('map')}>Relief map</button>
+          <button aria-pressed={view === 'plan'} onClick={() => setView('plan')}>
+            Action plan and tasks{isPlanDraft && <span className="rl-dot" aria-label="needs approval" />}
+          </button>
+        </nav>
+        <div className="rl-top-actions">
+          <button className="rl-btn rl-btn-ghost" onClick={handleToggleOffline} aria-pressed={isOffline}>
+            {isOffline ? <WifiOff size={15} /> : <Wifi size={15} />}
+            {isOffline ? 'Offline' : 'Online'}
+          </button>
+          <button className="rl-btn rl-btn-ghost" onClick={() => window.print()}><Printer size={15} />Print cards</button>
+          <button className="rl-btn rl-btn-ghost" onClick={handleExport}><Download size={15} />Offline pack</button>
+          <button className="rl-btn rl-btn-link" onClick={handleResetScenario}>Reset demo</button>
+        </div>
+      </header>
 
       {isOffline && (
-        <div className="no-print" style={{ background: '#78350f', borderBottom: '1px solid #b45309', padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem', color: '#fef3c7' }}>
+        <div className="rl-offline no-print" role="status">
           <WifiOff size={16} />
-          <span>
-            <strong>Offline Field Mode Active:</strong> Operating from local cached action plan and offline storage. Changes persist locally.
-          </span>
+          <span>Offline. Working from data saved on this device. Map photos may not load, but floodwater, districts and routes still show.</span>
         </div>
       )}
 
-      <main className="main-content">
-        <MetricsBar metrics={metrics} />
-
-        <AlertExtractor
-          plan={plan}
-          onPlanUpdated={handlePlanUpdated}
-          isOffline={isOffline}
+      {view === 'map' ? (
+        <ReliefView
+          locations={locations}
+          reports={reports}
+          isPlanDraft={isPlanDraft}
+          onReportUpdated={handleReportUpdated}
         />
+      ) : (
+        <main className="main-content">
+          <MetricsBar metrics={metrics} />
 
-        <div className="main-grid">
-          <div>
-            <TaskBoard
-              tasks={plan?.tasks || []}
-              volunteers={volunteers}
-              isPlanDraft={plan?.status === 'DRAFT_PENDING_APPROVAL'}
-              onTaskUpdated={handleTaskUpdated}
-            />
-          </div>
+          <AlertExtractor
+            plan={plan}
+            onPlanUpdated={handlePlanUpdated}
+            isOffline={isOffline}
+          />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <MapView locations={locations} reports={reports} />
+          <div className="main-grid">
+            <div>
+              <TaskBoard
+                tasks={plan?.tasks || []}
+                volunteers={volunteers}
+                isPlanDraft={isPlanDraft}
+                onTaskUpdated={handleTaskUpdated}
+              />
+            </div>
+
             <IncidentFeed
               reports={reports}
               onReportUpdated={handleReportUpdated}
             />
           </div>
-        </div>
-      </main>
+        </main>
+      )}
 
       {/* Formatted printable cards rendered for Ctrl+P */}
       <PrintableCards

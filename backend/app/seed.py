@@ -7,20 +7,20 @@ from .database import get_connection, reset_database
 from .models import LocationVerificationStatus, ReportStatus, ActionPlanStatus, TaskStatus
 from .extractor import extract_evidence_and_parameters, generate_draft_action_plan
 
+# Sample bulletin for the demo, modelled on the Sep 2025 Chenab and Sutlej floods. Not an official text.
 SAMPLE_FLOOD_ALERT = (
-    "URGENT DISASTER BULLETIN: The National Disaster Management Authority (NDMA) has issued a "
-    "Level 3 Flash Flood Warning for District Riverside Lowlands and Sector 4 Canal Corridor. "
-    "Heavy catchment rainfall upstream is expected to breach localized embankments within 4 hours. "
-    "Residents in low-lying sectors are advised to prepare for precautionary relocation to designated assembly points. "
+    "SAMPLE FLOOD BULLETIN: High flood in the Chenab and Sutlej rivers. A Level 3 flood warning is in effect "
+    "for District Multan and District Muzaffargarh. Embankments near Jalalpur Pirwala may breach within 12 hours. "
+    "Residents of low-lying areas are advised to prepare for precautionary relocation to designated relief camps. "
     "Emergency response units and volunteer groups must immediately inspect drainage culverts and assist registered vulnerable households."
 )
 
-SAMPLE_AGENCY = "National Disaster Management Authority (NDMA)"
-SAMPLE_URL = "https://ndma.gov.pk/advisories"
+SAMPLE_AGENCY = "PDMA Punjab (sample bulletin for demo)"
+SAMPLE_URL = "https://pdma.punjab.gov.pk"
 
 
 def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:
-    """Reset and seed the database with the Riverside Flood scenario."""
+    """Reset and seed the database with the Multan / Muzaffargarh flood scenario."""
     reset_database()
     conn = get_connection()
     try:
@@ -29,20 +29,20 @@ def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:
 
         # 1. Seed Volunteers
         volunteers = [
-            ("vol-01", "Amina Khan", "Medical Responder & First Aid", "Sector 3", "+92-300-***4521", 1, 1),
-            ("vol-02", "Bilal Ahmed", "Logistics & Transport", "Sector 4", "+92-321-***9812", 1, 1),
-            ("vol-03", "Zainab Tariq", "Community Coordinator", "Sector 2", "+92-333-***1178", 1, 1)
+            ("vol-01", "Amina Khan", "Medical Responder & First Aid", "Jalalpur Pirwala", "+92-300-***4521", 1, 1),
+            ("vol-02", "Bilal Ahmed", "Logistics & Transport", "Multan", "+92-321-***9812", 1, 1),
+            ("vol-03", "Zainab Tariq", "Community Coordinator", "Shujabad", "+92-333-***1178", 1, 1)
         ]
         cursor.executemany(
             "INSERT INTO volunteers VALUES (?, ?, ?, ?, ?, ?, ?)",
             volunteers
         )
 
-        # 2. Seed Assembly Points (ALL strictly verification required)
+        # 2. Seed relief camps / assembly points at real town locations (ALL strictly verification required)
         assembly_points = [
-            ("pt-01", "Community High School Ground", "Sector 3", 31.5204, 74.3587, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 200),
-            ("pt-02", "Sector 4 Sports Complex", "Sector 4", 31.5110, 74.3450, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 350),
-            ("pt-03", "Central Relief Camp", "Sector 2", 31.5350, 74.3620, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 150)
+            ("pt-01", "Shujabad relief camp", "Shujabad", 29.8803, 71.2930, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 600),
+            ("pt-02", "Jalalpur Pirwala relief camp", "Jalalpur Pirwala", 29.5052, 71.2203, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 900),
+            ("pt-03", "Alipur relief camp", "Alipur", 29.3826, 70.9120, LocationVerificationStatus.VERIFICATION_REQUIRED.value, None, 500)
         ]
         cursor.executemany(
             "INSERT INTO assembly_points VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -54,9 +54,9 @@ def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:
             (
                 "rep-01",
                 "FLOOD",
-                "Runoff waterlogging and fallen tree on Canal Underpass",
-                "Water levels approx 1.5 ft near Sector 4 underpass. Vehicles turning back.",
-                "Sector 4 Canal Corridor",
+                "Embankment breach reported south of Jalalpur Pirwala",
+                "Resident reports water coming over the embankment. The road into town is flooding.",
+                "Jalalpur Pirwala",
                 ReportStatus.UNVERIFIED.value,
                 now_str,
                 None,
@@ -65,13 +65,13 @@ def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:
             (
                 "rep-02",
                 "TRANSPORT",
-                "Elderly resident requires wheelchair transport assistance",
-                "Household opted into assisted transit. Need accessible vehicle before water rises.",
-                "Sector 3 Lowlands",
+                "Two boats and 8 volunteers free at Shujabad",
+                "Could carry the Jalalpur Pirwala load across the water.",
+                "Shujabad",
                 ReportStatus.UNVERIFIED.value,
                 now_str,
                 None,
-                "Flagged to Community Care volunteer."
+                "Offered by Zainab Tariq."
             )
         ]
         cursor.executemany(
@@ -122,7 +122,7 @@ def seed_demo_data(pre_approve_plan: bool = True) -> Dict[str, Any]:
             plan.tasks[2].status = TaskStatus.ESCALATED
             plan.tasks[2].volunteer_id = "vol-01"
             plan.tasks[2].assigned_to = "Amina Khan"
-            plan.tasks[2].escalation_reason = "Depot stock depleted: 150 additional sandbags required at Sector 4 culvert immediately."
+            plan.tasks[2].escalation_reason = "Road into Jalalpur Pirwala is under water: 150 more sandbags needed at the embankment, by boat."
 
             # Task 4: Pending assignment
             plan.tasks[3].status = TaskStatus.PENDING

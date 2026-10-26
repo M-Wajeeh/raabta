@@ -546,7 +546,7 @@ def get_action_metrics():
 
 @app.post("/api/scenario/reset")
 def reset_scenario(pre_approve: bool = True):
-    """Reset to clean Riverside flood seeded demo state."""
+    """Reset to clean Multan / Muzaffargarh flood seeded demo state."""
     res = seed_demo_data(pre_approve_plan=pre_approve)
     return {"message": "Scenario reset successfully", "details": res}
 
